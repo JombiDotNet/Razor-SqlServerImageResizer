@@ -1,0 +1,25 @@
+﻿# the humans responsible & colophon
+# humanstxt.org
+
+/* TEAM */
+  Principal development : Jim Richards
+  Twitter: @jombidesigns
+  Location:	Ames, IA
+
+/* THANKS */
+  www.smashingmagazine.com                  @smashingmag
+  Twitter Bootstrap                         @mdo and @fat
+  w3schools.com
+  Mikesdotnetting.com                       @Mikesdotnetting
+  webpagescms.com
+
+/* SITE */
+  Last update:  2015/07
+  Language:     English
+  Standards:    HTML5, CSS3
+  Framework:    Bootstrap                       getbootstrap.com/
+  Components:   jQuery                          jQuery.com/
+                jQuery Validation               
+                Microsoft ASP.NET Web Pages     asp.net/web-pages
+                Microsoft SQL Server LocalDb    microsoft.com/express/sql/
+  Software:     Microsoft Visual Studio, Microsoft Sql Server, Microsoft WebMatrix, Notepad++
