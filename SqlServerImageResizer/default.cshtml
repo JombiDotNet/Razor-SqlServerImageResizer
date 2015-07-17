@@ -1,0 +1,39 @@
+﻿@{
+  Page.Title = "ASP.NET Web Pages (Razor) Sql Image Resizer - JombiDotNet";
+  Page.Description = "";
+  Page.Author = "";
+
+  //dynamic page = null;
+  var db = Database.Open("JdnPhotoGallery");
+  var sql = string.Empty;
+
+  // TODO: ------START COMMMENT OUT OR DELETE HERE -----------------
+  bool shouldCommentOut = false;
+  // Check to see if the database has been sucessfully created. After the database is set up correctly, remove this try
+  sql = @"SELECT object_id FROM sys.Tables WHERE name IN ('AspectRatio', 'ImageFile')";
+  var result = db.QueryValue(sql);
+  if (result == null)
+  { Response.Redirect("~/first-run"); }
+  else
+  { shouldCommentOut = true; }
+  // ------END COMMMENT OUT OR DELETE HERE -----------------
+}
+
+@section scripts {
+
+
+}
+
+@*TODO: ------START COMMMENT BODY OUT OR DELETE HERE -----------------*@
+@if (shouldCommentOut)
+{
+  <div class="alert alert-danger" role="alert">
+    <strong>The database has been successfully created</strong> You have successfully created the database,
+    you should now go through the default.cshtml file and comment out or delete the specified code.
+  </div>
+}
+  @*------END COMMMENT BODY OUT OR DELETE HERE -----------------*@
+
+  <div>
+
+  </div>

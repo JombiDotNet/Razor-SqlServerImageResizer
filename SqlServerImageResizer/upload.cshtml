@@ -1,0 +1,59 @@
+﻿@using Microsoft.Web.Helpers;
+@{
+  Page.Title = "Upload an Image";
+  var db = Database.Open(App.Database);
+  
+  WebSecurity.RequireAuthenticatedUser();
+
+  if (IsPost)
+  {
+      var numFiles = Request.Files.Count;
+    if (numFiles == 0)
+    {
+      ModelState.AddError("fileUpload", "Please specify at least one photo to upload.");
+    }
+    else
+    {
+      for (int i = 0; i < numFiles; i++)
+      {
+        var file = Request.Files[i];
+        if (file != null)
+        {
+          var filename = file.FileName;
+
+          var upload = new WebImage(file.InputStream);
+          var imageTitle = Path.GetFileNameWithoutExtension(filename).Trim();
+
+          var imageBytes = upload.GetBytes();
+
+          db.Execute(@"INSERT INTO ImageFile
+                        (FileExtension, ImageFormat, SourcePath, ImageContents, FileSize, ImageWidth, ImageHeight, UserId)
+                        VALUES (@0, @1, @2, @3, @4, @5, @6, @7)", 
+                        Path.GetExtension(filename).Trim(), upload.ImageFormat, filename, imageBytes, imageBytes.Length, upload.Width, upload.Height,  WebSecurity.CurrentUserId);
+                
+
+        }
+      }
+    }
+  }
+}
+
+<div class="container">
+  <h1>Upload Photo</h1>
+
+  <form method="post" enctype="multipart/form-data">
+    @Html.ValidationSummary("Unable to upload:")
+    <fieldset class="no-legend">
+      <legend>Upload Photo</legend>
+      @FileUpload.GetHtml(addText: "Add more files", uploadText: "Upload", includeFormTag: false)
+      <p class="form-actions">
+        <input type="submit" value="Upload" title="Upload photo" />
+        <a href="~/" title="cancel">Cancel</a>
+      </p>
+    </fieldset>
+  </form>
+
+  <p class="message info">
+    The default file size is limited to 4MB. To change this you will need to update the 'HttpRuntimeSection/MaxRequestLength' section in web.config.
+  </p>
+</div>

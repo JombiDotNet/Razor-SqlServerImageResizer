@@ -1,0 +1,94 @@
+﻿@{
+  Page.Title = "Login";
+
+  // Initialize general page variables
+  var email = "";
+  var password = "";
+  var rememberMe = false;
+
+  Validation.RequireField("email", "You must specify an email address.");
+  Validation.RequireField("password", "You must specify a password.");
+  Validation.Add("password",
+      Validator.StringLength(
+          maxLength: Int32.MaxValue,
+          minLength: 6,
+          errorMessage: "Password must be at least 6 characters"));
+
+  if (IsPost && Validation.IsValid())
+  {
+    AntiForgery.Validate();
+    email = Request["email"];
+    password = Request["password"];
+    rememberMe = Request["remember-me"].AsBool();
+
+    if (WebSecurity.UserExists(email) &&
+      WebSecurity.GetPasswordFailuresSinceLastSuccess(email) > 4 &&
+      WebSecurity.GetLastPasswordFailureDate(email).AddSeconds(60) > DateTime.UtcNow)
+    {
+      Response.Redirect("~/account/account-locked-out", false);
+    }
+
+    if (WebSecurity.Login(email, password, rememberMe))
+    {
+      var returnUrl = Request["ReturnUrl"];
+      if (returnUrl.IsEmpty())
+      { Response.Redirect("~/"); }
+      else
+      { Context.RedirectLocal(returnUrl); }
+    }
+    else
+    {
+      ModelState.AddFormError("The email or password provided is incorrect.");
+    }
+  }
+
+}
+
+@section scripts {
+  <script src="~/scripts/jquery.validate.min.js"></script>
+  <script src="~/scripts/jquery.validate.unobtrusive.min.js"></script>
+}
+
+<div class="container">
+  <hgroup>
+    <h1>@Page.Title</h1>
+    <h2>Please enter your email and password below.</h2>
+  </hgroup>
+
+  <form method="post" class="form-horizontal">
+    @Html.ValidationSummary("Log in was unsuccessful. Please correct the errors and try again.<br />", excludeFieldErrors: true, htmlAttributes: null)
+
+    <fieldset class="no-legend">
+      <legend>Login</legend>
+      <div class="form-group">
+        <label class="col-sm-2 control-label" for=" email">Email address</label>
+        <div class="col-sm-10">
+          <input type="email" class="form-control" name="email" id="email" placeholder="Email" @Validation.For("email") />
+          @Html.ValidationMessage("email")
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-2 control-label" for="password">Password</label>
+        <div class="col-sm-10">
+          <input type="password" class="form-control" name="password" id="password" placeholder="Password" @Validation.For("password") />
+          @Html.ValidationMessage("password")
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" name="remember-me" id="remember-me"> Remember me
+            </label>
+          </div>
+        </div>
+      </div>
+      @AntiForgery.GetHtml()
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-default">Sign in</button>
+        </div>
+      </div>
+    </fieldset>
+  </form>
+</div> <!-- /container -->

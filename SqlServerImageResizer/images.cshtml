@@ -1,0 +1,139 @@
+@*@{
+  Layout = null;
+
+  // Usage: images/[columnSpan]/[ImageId]
+  // or:    images/[ImageFileId]
+  // or:    images/[ImageFileId]?height=[height-in-pixels]
+  // If only one UrlData, then span will be 12
+
+  var columnSpan = UrlData[0].AsDecimal();
+  var imageFileId = UrlData[1].AsInt();
+
+  // if the UrlData[1] is null, there was only one segment, so assume the 0 segment was supposed to be imageId
+  if (imageFileId == 0)
+  {
+    imageFileId = (int)columnSpan;
+    columnSpan = 12;
+  }
+
+  var maxHeight = Request.QueryString["height"].AsInt();
+
+  bool imagesUseCache = bool.Parse(AppComponents.ValueOf(AppComponent.ImagesUseCache));
+
+  // Create the cache key
+  var cacheImageKey = string.Format("image-{0}-{1}", imageFileId, columnSpan);
+
+  // if height is defined, append the height to the cache key
+  if (maxHeight > 0)
+  { cacheImageKey += string.Format("-{0}", maxHeight); }
+
+  if (imagesUseCache)
+  {
+    // Get the cached image.
+    var cacheWebImage = WebCache.Get(cacheImageKey);
+    var cacheImageType = WebCache.Get(cacheImageKey + "-image-format");
+
+
+    // Determine if the cached image is valid
+    var cacheHit = (cacheWebImage != null);
+
+    // If there was a cache hit, output the cached image
+    if (cacheHit)
+    {
+      try
+      {
+        // The cache should contain the image in a byte array.
+        Response.ContentType = cacheImageType;
+        var output = new WebImage(cacheWebImage);
+
+        output.Write();
+        Response.End();
+      }
+      catch (Exception)
+      {
+        // If there is an error, just remove the image from the cache and continue
+        WebCache.Remove(cacheImageKey);
+      }
+    }
+  }
+
+  // Get AppState data found in _AppStart.cshtml
+  var contentPreference = AppComponents.ValueOf(AppComponent.PreferredImageSource);
+  var preventEnlarge = bool.Parse(AppComponents.ValueOf(AppComponent.ImagesPreventEnlarge));
+
+  // In Bootstrap 2.3.1, the default grid system has 12 columns, making for a 940px wide container.
+  // When responsive is added, the grid adapts to 724px and 1107px wide depending on the viewport.
+  // twitter.github.io/bootstrap/scaffolding.html#gridSystem
+
+  // The desired output image width
+  int spanWidth = SiteHelper.WidthIf(span: (int)columnSpan);
+
+  using (var db = new RgcNetEntities())
+  {
+
+    ImageFile image = db.ImageFiles.Single(i => i.ImageFileId == imageFileId);
+
+    if (image == null)
+    {
+      Response.SetStatus(HttpStatusCode.NotFound);
+      Response.End();
+    }
+
+    // Determine if the image should be pulled from the database (db) or from file system (fs)
+    WebImage webImage = (contentPreference == "db") ? new WebImage(image.ImageContents) : new WebImage(image.ImagePath);
+
+    // Load the image byte array from the database.
+
+    // if maxHeight is not defined, resize to columnSpan.
+    if (maxHeight == 0)
+    {
+      // check if the span is larger than the image. Also make sure we don't want to make images larger.
+      if (spanWidth >= webImage.Width && preventEnlarge)
+      {
+        webImage.Write(image.ContentType);
+      }
+      else
+      {
+        // increment the spanWidth
+        spanWidth++;
+
+        // If the image is larger than the defined container size, we want to scale it down. 
+        // Use the resizeHeigh to make sure the image stays in the same dimensions.
+        int resizeHeight = (int)Math.Ceiling(((decimal)spanWidth / (decimal)webImage.Width) * (decimal)webImage.Height);
+
+        // cropping the image removes the top and left border. Thanks to: www.techiesweb.net/webimage-resize-method-how-to-remove-the-left-and-top-border-from-the-image/
+        webImage.Resize(width: spanWidth, height: resizeHeight, preserveAspectRatio: false, preventEnlarge: preventEnlarge).Crop(1, 1).Write(image.ContentType);
+      }
+    }
+    else
+    {
+      // we want to resize the image based on the height.
+
+      // check if the desired height is larger than the image. Also make sure we don't want to make images larger.
+      if (maxHeight >= webImage.Height && preventEnlarge)
+      {
+        webImage.Write(image.ContentType);
+      }
+      else
+      {
+        // If the image is larger than the desired height, we want to scale it down. 
+
+        maxHeight++;
+
+        int resizeWidth = (int)Math.Ceiling(((decimal)maxHeight / (decimal)webImage.Height) * (decimal)webImage.Width);
+
+        // cropping the image removes the top and left border. Thanks to: www.techiesweb.net/webimage-resize-method-how-to-remove-the-left-and-top-border-from-the-image/
+        webImage.Resize(width: resizeWidth, height: maxHeight, preserveAspectRatio: false, preventEnlarge: preventEnlarge).Crop(1, 1).Write(image.ContentType);
+      }
+
+    }
+
+    // Set the cache. Use the byte array from the database.
+    if (imagesUseCache)
+    {
+      WebCache.Set(cacheImageKey, webImage.GetBytes());
+      WebCache.Set(cacheImageKey + "-image-format", image.ContentType);
+    }
+  }
+  Response.End();
+}*@

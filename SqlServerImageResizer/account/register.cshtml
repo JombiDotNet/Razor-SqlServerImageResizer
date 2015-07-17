@@ -1,0 +1,101 @@
+﻿@{
+  Page.Title = "Register";
+
+  Validation.RequireField("email", "You must specify an email address.");
+  Validation.RequireField("password", "You must specify a password.");
+  Validation.Add("confirm-password",
+      Validator.Required("You must specify a confirm password."),
+      Validator.EqualsTo("password", "The new password and confirmation password do not match."));
+  Validation.Add("password",
+Validator.StringLength(
+    maxLength: Int32.MaxValue,
+    minLength: 6,
+    errorMessage: "Password must be at least 6 characters"));
+
+  if (IsPost && Validation.IsValid() && ModelState.IsValid)
+  {
+    AntiForgery.Validate();
+    
+    var email = Request["email"];
+    var password = Request["password"];
+    var confirmPassword = Request["confirm-password"];
+
+    // Create the user profile
+    var db = Database.Open(App.Database);
+
+    // Check if user already exists
+    var user = db.QuerySingle("SELECT Email FROM UserProfile WHERE LOWER(Email) = LOWER(@0)", email);
+    if (user == null)
+    {
+      // Insert email into the profile table
+      db.Execute("INSERT INTO UserProfile (Email) VALUES (@0)", email, "");
+
+      // Create and associate a new entry in the membership database.
+      // If successful, continue processing the request
+      try
+      {
+        WebSecurity.CreateAccount(email, password);
+        WebSecurity.Login(email, password);
+        Response.Redirect("~/");
+      }
+      catch (System.Web.Security.MembershipCreateUserException e)
+      {
+        ModelState.AddFormError(e.ToString());
+      }
+    }
+    else
+    {
+      // User already exists
+      ModelState.AddFormError("Email address is already in use.");
+    }
+  }
+
+}
+
+@section scripts {
+  <script src="~/scripts/jquery.validate.min.js"></script>
+  <script src="~/scripts/jquery.validate.unobtrusive.min.js"></script>
+}
+
+<div class="container">
+  <hgroup>
+    <h1>@Page.Title</h1>
+    <h2>Please enter your email and password below.</h2>
+  </hgroup>
+
+  <form method="post" class="form-horizontal">
+    @Html.ValidationSummary("Account creation was unsuccessful. Please correct the errors and try again.", excludeFieldErrors: true, htmlAttributes: null)
+
+    <fieldset class="no-legend">
+      <legend>Create Account</legend>
+      <div class="form-group">
+        <label class="col-sm-2 control-label" for=" email">Email address</label>
+        <div class="col-sm-10">
+          <input type="email" class="form-control" name="email" id="email" placeholder="Email" @Validation.For("email") />
+          @Html.ValidationMessage("email")
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-2 control-label" for="password">Password</label>
+        <div class="col-sm-10">
+          <input type="password" class="form-control" name="password" id="password" placeholder="Password" @Validation.For("password") />
+          @Html.ValidationMessage("password")
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-2 control-label" for="confirm-password">Confirm Password</label>
+        <div class="col-sm-10">
+          <input type="password" class="form-control" name="confirm-password" id="confirm-password" placeholder="Confirm Password" @Validation.For("confirm-password") />
+          @Html.ValidationMessage("confirm-password")
+        </div>
+      </div>
+
+      @AntiForgery.GetHtml()
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-default">Create Account</button>
+        </div>
+      </div>
+    </fieldset>
+  </form>
+</div> <!-- /container -->

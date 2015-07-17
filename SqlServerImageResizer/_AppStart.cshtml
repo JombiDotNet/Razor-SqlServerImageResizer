@@ -1,0 +1,20 @@
+﻿@{
+  App.CacheDuration = 30;     // cache content pages for 30 minutes
+
+  App.Database = "JdnPhotoGallery";
+  try
+  {
+    WebSecurity.InitializeDatabaseConnection(connectionStringName: (string)App.Database, userTableName: "UserProfile", userIdColumn: "UserId", userNameColumn: "Email", autoCreateTables: true);
+  }
+  catch (System.Data.SqlClient.SqlException ex)
+  {
+    if (ex.Message.StartsWith("Cannot attach the file"))
+    {
+      throw new IOException(string.Format("The App_Data\\{0} file could not be found. Please check the App_Data folder and be sure to rename {0}.md_ to {0}.mdf and {0}_log.ld_ to {0}_log.ldf", App.Database), ex);
+    }
+    else
+    {
+      throw new InvalidOperationException("The ASP.NET Simple Membership database could not be initialized. For more information, please see http://go.microsoft.com/fwlink/?LinkId=256588", ex);
+    }
+  }
+}

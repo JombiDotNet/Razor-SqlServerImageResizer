@@ -1,0 +1,35 @@
+﻿@using System;
+@using System.Drawing;
+@using System.Drawing.Drawing2D;
+@using System.IO;
+
+@{
+  Layout = null;
+  Response.ContentType = "image/png";
+
+  var imageWidth = UrlData[0].ToString();
+  var imageHeight = UrlData[1].ToString();
+
+  int width = int.Parse(imageWidth);
+  int height = int.Parse(imageHeight);
+
+  Bitmap blank = new Bitmap(width, height);
+  Graphics blankGraphics = Graphics.FromImage(blank);
+
+  blankGraphics.FillRectangle(Brushes.WhiteSmoke, 0, 0, width, height);
+
+  Image img = (Image)blank;
+
+  byte[] byteArray = new byte[0];
+  using (MemoryStream stream = new MemoryStream())
+  {
+    img.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+    stream.Close();
+    byteArray = stream.ToArray();
+  }
+
+  WebImage output = new WebImage(byteArray);
+  output.Write("image/png");
+
+  Response.End();
+}

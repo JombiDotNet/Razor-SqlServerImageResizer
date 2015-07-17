@@ -1,0 +1,28 @@
+﻿@*@{
+  Layout = null;
+  // Cache the image for a minute
+  Response.OutputCache(60);
+
+  var imageFileId = UrlData[0].AsInt();
+
+  using (var db = Database.Open("JdnPhotoGallery"))
+  {
+
+    ImageFile image = db.QuerySingle("SELECT * FROM ImageFile WHERE ImageFileId = @0", imageFileId);
+
+    if (image == null)
+    {
+      Response.SetStatus(HttpStatusCode.NotFound);
+      Response.End();
+    }
+
+    Response.ContentType = image.ContentType;
+    Response.AppendHeader("content-disposition", String.Format("attachment; filename={0}", HttpUtility.UrlPathEncode(image.ImageMaster.ImageTitle + image.FileExtension)));
+
+    string contentPreference = AppComponents.ValueOf(AppComponent.PreferredImageSource);
+
+    WebImage output = (contentPreference == "db") ? new WebImage(image.ImageContents) : new WebImage(image.ImagePath);
+    output.Write();
+  }
+  Response.End();
+}*@
