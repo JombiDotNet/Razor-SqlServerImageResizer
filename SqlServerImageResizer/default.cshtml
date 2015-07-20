@@ -17,6 +17,8 @@
   else
   { shouldCommentOut = true; }
   // ------END COMMMENT OUT OR DELETE HERE -----------------
+
+  var images = db.Query(@"SELECT * FROM ImageFile").ToList();
 }
 
 @section scripts {
@@ -24,16 +26,28 @@
 
 }
 
-@*TODO: ------START COMMMENT BODY OUT OR DELETE HERE -----------------*@
-@if (shouldCommentOut)
-{
-  <div class="alert alert-danger" role="alert">
-    <strong>The database has been successfully created</strong> You have successfully created the database,
-    you should now go through the default.cshtml file and comment out or delete the specified code.
-  </div>
-}
+<div class="container">
+  @*TODO: ------START COMMMENT BODY OUT OR DELETE HERE -----------------*@
+  @if (shouldCommentOut)
+  {
+    <div class="alert alert-danger" role="alert">
+      <strong>The database has been successfully created</strong> You have successfully created the database,
+      you should now go through the default.cshtml file and comment out or delete the specified code.
+    </div>
+  }
   @*------END COMMMENT BODY OUT OR DELETE HERE -----------------*@
 
-  <div>
-
+  <div class="row">
+    <h1>Images</h1>
+    <p>There are @images.Count image(s)</p>
   </div>
+
+  <ul>
+    @foreach (var image in images)
+    {
+      <li>
+        <a href="~/image-details/@image.ImageFileId"><img src="~/images/3/@image.ImageFileId" alt="@image.ImageGuid" /></a>
+      </li>
+    }
+  </ul>
+</div>

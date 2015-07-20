@@ -1,0 +1,56 @@
+﻿@{
+  var imageFileId = UrlData[0].AsInt();
+
+  Page.Title = "Image " + imageFileId + " Information";
+
+  var db = Database.Open("JdnPhotoGallery");
+  var image = db.Query(@"SELECT * FROM ImageFile WHERE ImageFileId = " + imageFileId).Single(); ;
+
+}
+
+<div class="container">
+  <h1>Image Details for: @imageFileId</h1>
+  <img src="~/images/@imageFileId" alt="Full Size" />
+  <dl class="dl-horizontal">
+    <dt>GUID</dt>
+    <dd>@image.ImageGuid</dd>
+    <dt>File Extension</dt>
+    <dd>@image.FileExtension</dd>
+    <dt>Image Format</dt>
+    <dd>@image.ImageFormat</dd>
+    <dt>Source Path</dt>
+    <dd>@image.SourcePath</dd>
+    <dt>File Size</dt>
+    <dd>@string.Format("{0:#,##0.0} bytes / {1:#,##0.0} KB / {2:#,##0.0} MB", image.FileSize, image.FileSizeKb, image.FileSizeMb)</dd>
+    <dt>Width</dt>
+    <dd>@image.ImageWidth</dd>
+    <dt>Height</dt>
+    <dd>@image.ImageHeight</dd>
+    <dt>Uploaded</dt>
+    <dd>@string.Format("{0:g}", image.UploadDate)</dd>
+    <dt>Uploaded by User Id</dt>
+    <dd>@image.UserId</dd>
+  </dl>
+  <h2>On-demand Image Resizing based on column widths <small>Column count must add up to 12</small></h2>
+  <h3>Columns: 1, 1, 1, 2, 3, 4</h3>
+  <div class="row">
+    <div class="col-md-1">1<br /><img src="~/images/1/@imageFileId" alt="1 column" /></div>
+    <div class="col-md-1">1<br /><img src="~/images/1/@imageFileId" alt="1 column" /></div>
+    <div class="col-md-1">1<br /><img src="~/images/1/@imageFileId" alt="1 column" /></div>
+    <div class="col-md-2">2<br /><img src="~/images/2/@imageFileId" alt="2 columns" /></div>
+    <div class="col-md-3">3<br /><img src="~/images/3/@imageFileId" alt="3 columns" /></div>
+    <div class="col-md-4">4<br /><img src="~/images/4/@imageFileId" alt="4 columns" /></div>
+  </div>
+  <h3>Columns: 5, 1, 6</h3>
+  <div class="row">
+    <div class="col-md-5">5<br /><img src="~/images/5/@imageFileId" alt="5 columns" /></div>
+    <div class="col-md-1">1<br /><img src="~/images/1/@imageFileId" alt="1 column" /></div>
+    <div class="col-md-6">6<br /><img src="~/images/6/@imageFileId" alt="6 columns" /></div>
+  </div>
+  <h3>Columns: 7, 5</h3>
+  <div class="row">
+    <div class="col-md-7">7<br /><img src="~/images/7/@imageFileId" alt="7 columns" /></div>
+    <div class="col-md-5">5<br /><img src="~/images/5/@imageFileId" alt="5 columns" /></div>
+  </div>
+
+</div>

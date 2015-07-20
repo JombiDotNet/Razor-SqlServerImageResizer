@@ -1,4 +1,4 @@
-@*@{
+@{
   Layout = null;
 
   // Usage: images/[columnSpan]/[ImageId]
@@ -18,7 +18,7 @@
 
   var maxHeight = Request.QueryString["height"].AsInt();
 
-  bool imagesUseCache = bool.Parse(AppComponents.ValueOf(AppComponent.ImagesUseCache));
+  bool imagesUseCache = System.Web.Configuration.WebConfigurationManager.AppSettings["imagesUseCache"].AsBool();
 
   // Create the cache key
   var cacheImageKey = string.Format("image-{0}-{1}", imageFileId, columnSpan);
@@ -58,20 +58,21 @@
   }
 
   // Get AppState data found in _AppStart.cshtml
-  var contentPreference = AppComponents.ValueOf(AppComponent.PreferredImageSource);
-  var preventEnlarge = bool.Parse(AppComponents.ValueOf(AppComponent.ImagesPreventEnlarge));
+  var preventEnlarge = System.Web.Configuration.WebConfigurationManager.AppSettings["imagesPreventEnlarge"].AsBool();
 
   // In Bootstrap 2.3.1, the default grid system has 12 columns, making for a 940px wide container.
   // When responsive is added, the grid adapts to 724px and 1107px wide depending on the viewport.
   // twitter.github.io/bootstrap/scaffolding.html#gridSystem
 
   // The desired output image width
-  int spanWidth = SiteHelper.WidthIf(span: (int)columnSpan);
+  int gridColumnWidth = 70;
+  int gridGutterWidth = 30;
 
-  using (var db = new RgcNetEntities())
-  {
+  int spanWidth = (int)Math.Floor((columnSpan * gridColumnWidth) + (gridGutterWidth * (columnSpan - 1)))  ;
 
-    ImageFile image = db.ImageFiles.Single(i => i.ImageFileId == imageFileId);
+  var db = Database.Open("JdnPhotoGallery");
+
+  var image = db.Query(@"SELECT * FROM ImageFile WHERE ImageFileId = " + imageFileId).Single();
 
     if (image == null)
     {
@@ -80,8 +81,8 @@
     }
 
     // Determine if the image should be pulled from the database (db) or from file system (fs)
-    WebImage webImage = (contentPreference == "db") ? new WebImage(image.ImageContents) : new WebImage(image.ImagePath);
-
+    WebImage webImage = new WebImage(image.ImageContents) ;
+    string contentType = "image/" + image.ImageFormat;
     // Load the image byte array from the database.
 
     // if maxHeight is not defined, resize to columnSpan.
@@ -90,7 +91,7 @@
       // check if the span is larger than the image. Also make sure we don't want to make images larger.
       if (spanWidth >= webImage.Width && preventEnlarge)
       {
-        webImage.Write(image.ContentType);
+        webImage.Write(contentType);
       }
       else
       {
@@ -102,7 +103,7 @@
         int resizeHeight = (int)Math.Ceiling(((decimal)spanWidth / (decimal)webImage.Width) * (decimal)webImage.Height);
 
         // cropping the image removes the top and left border. Thanks to: www.techiesweb.net/webimage-resize-method-how-to-remove-the-left-and-top-border-from-the-image/
-        webImage.Resize(width: spanWidth, height: resizeHeight, preserveAspectRatio: false, preventEnlarge: preventEnlarge).Crop(1, 1).Write(image.ContentType);
+        webImage.Resize(width: spanWidth, height: resizeHeight, preserveAspectRatio: false, preventEnlarge: preventEnlarge).Crop(1, 1).Write(contentType);
       }
     }
     else
@@ -112,7 +113,7 @@
       // check if the desired height is larger than the image. Also make sure we don't want to make images larger.
       if (maxHeight >= webImage.Height && preventEnlarge)
       {
-        webImage.Write(image.ContentType);
+        webImage.Write(contentType);
       }
       else
       {
@@ -123,7 +124,7 @@
         int resizeWidth = (int)Math.Ceiling(((decimal)maxHeight / (decimal)webImage.Height) * (decimal)webImage.Width);
 
         // cropping the image removes the top and left border. Thanks to: www.techiesweb.net/webimage-resize-method-how-to-remove-the-left-and-top-border-from-the-image/
-        webImage.Resize(width: resizeWidth, height: maxHeight, preserveAspectRatio: false, preventEnlarge: preventEnlarge).Crop(1, 1).Write(image.ContentType);
+        webImage.Resize(width: resizeWidth, height: maxHeight, preserveAspectRatio: false, preventEnlarge: preventEnlarge).Crop(1, 1).Write(contentType);
       }
 
     }
@@ -132,8 +133,8 @@
     if (imagesUseCache)
     {
       WebCache.Set(cacheImageKey, webImage.GetBytes());
-      WebCache.Set(cacheImageKey + "-image-format", image.ContentType);
+      WebCache.Set(cacheImageKey + "-image-format", contentType);
     }
   }
   Response.End();
-}*@
+}

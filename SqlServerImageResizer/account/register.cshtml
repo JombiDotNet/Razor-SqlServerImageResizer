@@ -1,6 +1,10 @@
 ﻿@{
   Page.Title = "Register";
 
+  bool canRegisterNewUser = System.Web.Configuration.WebConfigurationManager.AppSettings["allowNewUser"].AsBool();
+
+  if (!canRegisterNewUser) { Response.Redirect("~/account/no-more-users"); }
+
   Validation.RequireField("email", "You must specify an email address.");
   Validation.RequireField("password", "You must specify a password.");
   Validation.Add("confirm-password",
@@ -15,7 +19,7 @@ Validator.StringLength(
   if (IsPost && Validation.IsValid() && ModelState.IsValid)
   {
     AntiForgery.Validate();
-    
+
     var email = Request["email"];
     var password = Request["password"];
     var confirmPassword = Request["confirm-password"];
